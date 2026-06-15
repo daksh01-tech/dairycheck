@@ -1,7 +1,383 @@
 <!DOCTYPE html>
-<html>
-<head><title>Test</title></head>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DairyCheck — Milk Quality Checker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; font-size: 14px; }
+  .container { max-width: 680px; margin: 0 auto; padding: 1rem; }
+  input, select, button { font-family: inherit; font-size: 14px; outline: none; }
+  input, select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a1a; }
+  input:focus, select:focus { border-color: #888; }
+  button { cursor: pointer; padding: 8px 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #1a1a1a; transition: background 0.15s; }
+  button:hover { background: #f0f0ea; }
+  button.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  button.primary:hover { background: #333; }
+  .card { background: #fff; border: 1px solid #e5e5e0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+  .metric { background: #f5f5f0; border-radius: 8px; padding: 1rem; }
+  .metric .label { font-size: 12px; color: #666; margin-bottom: 4px; }
+  .metric .value { font-size: 22px; font-weight: 500; }
+  .nav { display: flex; gap: 4px; border-bottom: 1px solid #e5e5e0; margin-bottom: 1.5rem; }
+  .nav button { background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 10px 12px; font-size: 13px; color: #888; margin-bottom: -1px; }
+  .nav button.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
+  .badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 500; }
+  .badge-success { background: #eaf3de; color: #27500a; }
+  .badge-warning { background: #faeeda; color: #633806; }
+  .badge-danger { background: #fcebeb; color: #501313; }
+  .row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .row > * { flex: 1; min-width: 0; }
+  .field { margin-bottom: 12px; }
+  .field label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+  .hint { font-size: 11px; color: #aaa; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td, th { padding: 8px 10px; text-align: left; border-bottom: 1px solid #e5e5e0; }
+  th { font-size: 11px; color: #888; font-weight: 500; background: #fafaf8; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: #e6f1fb; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #0c447c; flex-shrink: 0; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  #login-wrap { max-width: 380px; margin: 3rem auto; }
+  .auth-tab-bar { display: flex; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 1.25rem; }
+  .auth-tab-bar button { flex: 1; border: none; border-radius: 0; padding: 9px; font-size: 13px; background: #fff; color: #888; }
+  .auth-tab-bar button.active { background: #f0f0ea; color: #1a1a1a; font-weight: 500; }
+  .score-bar { background: #eee; border-radius: 999px; height: 7px; overflow: hidden; margin: 8px 0 12px; }
+  .score-fill { height: 100%; border-radius: 999px; }
+  .result-card { border-radius: 12px; padding: 1rem 1.25rem; margin-top: 12px; border: 1px solid; }
+  .result-card.success { background: #eaf3de; border-color: #97c459; }
+  .result-card.warning { background: #faeeda; border-color: #ef9f27; }
+  .result-card.danger { background: #fcebeb; border-color: #f09595; }
+  .issue-line { font-size: 12px; margin: 3px 0; padding-left: 8px; border-left: 2px solid; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 1rem 0 1.25rem; border-bottom: 1px solid #e5e5e0; margin-bottom: 1.25rem; }
+  @media (max-width: 500px) {
+    .row { flex-direction: column; gap: 0; }
+    .nav button { font-size: 12px; padding: 8px 8px; }
+    table { font-size: 12px; }
+    td, th { padding: 6px 6px; }
+  }
+</style>
+</head>
 <body>
-<h1>DairyCheck is working!</h1>
+<div class="container">
+
+<div id="page-login" class="page active">
+  <div id="login-wrap">
+    <div style="text-align:center; margin-bottom:2rem;">
+      <i class="ti ti-droplet" style="font-size:40px; color:#378add;"></i>
+      <h1 style="font-size:24px; font-weight:500; margin:8px 0 4px;">DairyCheck</h1>
+      <p style="color:#666;">Milk quality checker for farmers &amp; dairy owners</p>
+    </div>
+    <div class="card">
+      <div class="auth-tab-bar">
+        <button class="active" onclick="switchAuthTab('login')" id="tab-login">Sign in</button>
+        <button onclick="switchAuthTab('register')" id="tab-register">Register</button>
+      </div>
+      <div id="form-login">
+        <div class="field"><label>Farm / business name</label><input type="text" id="login-name" placeholder="e.g. Singh Dairy Farm" /></div>
+        <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="Enter password" /></div>
+        <div id="login-err" style="font-size:12px; color:#a32d2d; margin-bottom:8px; display:none;"></div>
+        <button class="primary" onclick="doLogin()" style="width:100%; padding:10px; font-size:14px;">Sign in</button>
+        <p style="font-size:12px; color:#aaa; text-align:center; margin-top:12px;">First time? Use any name + password <b>milk123</b></p>
+      </div>
+      <div id="form-register" style="display:none;">
+        <div class="field"><label>Your name</label><input type="text" id="reg-person" placeholder="e.g. Harpreet Singh" /></div>
+        <div class="field"><label>Farm / business name</label><input type="text" id="reg-farm" placeholder="e.g. Singh Dairy Farm" /></div>
+        <div class="field"><label>Phone number</label><input type="tel" id="reg-phone" placeholder="e.g. 9876543210" /></div>
+        <div class="field"><label>Password</label><input type="password" id="reg-pass" placeholder="Choose a password" /></div>
+        <div id="reg-err" style="font-size:12px; color:#a32d2d; margin-bottom:8px; display:none;"></div>
+        <button class="primary" onclick="doRegister()" style="width:100%; padding:10px; font-size:14px;">Create account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="page-app" class="page">
+  <div class="topbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <i class="ti ti-droplet" style="font-size:22px; color:#378add;"></i>
+      <span style="font-size:17px; font-weight:500;">DairyCheck</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="avatar" id="user-avatar">HS</div>
+      <div>
+        <p style="font-size:13px; font-weight:500;" id="user-name-display">Harpreet Singh</p>
+        <p style="font-size:11px; color:#888;" id="user-farm-display">Singh Dairy Farm</p>
+      </div>
+      <button onclick="doLogout()" title="Logout"><i class="ti ti-logout"></i></button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="active" onclick="showTab('dashboard',this)"><i class="ti ti-home"></i> Dashboard</button>
+    <button onclick="showTab('test',this)"><i class="ti ti-microscope"></i> New test</button>
+    <button onclick="showTab('history',this)"><i class="ti ti-history"></i> History</button>
+    <button onclick="showTab('report',this)"><i class="ti ti-file-text"></i> Report</button>
+  </div>
+
+  <div id="tab-dashboard" class="tab-panel active">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:1.25rem;">
+      <div class="metric"><div class="label">Total tests</div><div class="value" id="stat-total">0</div></div>
+      <div class="metric"><div class="label">Grade A</div><div class="value" id="stat-a" style="color:#3b6d11;">0</div></div>
+      <div class="metric"><div class="label">Grade B</div><div class="value" id="stat-b" style="color:#854f0b;">0</div></div>
+      <div class="metric"><div class="label">Rejected</div><div class="value" id="stat-c" style="color:#a32d2d;">0</div></div>
+    </div>
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; margin-bottom:12px;">Recent tests</p>
+      <div id="recent-list"><p style="color:#888; font-size:13px;">No tests yet. Run your first test!</p></div>
+    </div>
+    <button class="primary" onclick="showTab('test', document.querySelectorAll('.nav button')[1])" style="width:100%; padding:10px; margin-top:4px; font-size:14px;"><i class="ti ti-plus"></i> Run new milk test</button>
+  </div>
+
+  <div id="tab-test" class="tab-panel">
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; margin-bottom:12px;">Batch details</p>
+      <div class="row">
+        <div class="field"><label>Batch / can number</label><input type="text" id="t-batch" placeholder="e.g. Batch-001" /></div>
+        <div class="field"><label>Animal type</label><select id="t-animal"><option>Cow</option><option>Buffalo</option><option>Mixed</option></select></div>
+      </div>
+    </div>
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; margin-bottom:12px;">Milk parameters</p>
+      <div class="row">
+        <div class="field"><label>Density (g/mL)</label><input type="number" id="t-density" step="0.001" placeholder="e.g. 1.030" /><p class="hint">Normal: 1.028–1.034</p></div>
+        <div class="field"><label>Temperature (°C)</label><input type="number" id="t-temp" step="0.1" placeholder="e.g. 4" /><p class="hint">Ideal storage: 2–6°C</p></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Fat content (%)</label><input type="number" id="t-fat" step="0.1" placeholder="e.g. 3.5" /><p class="hint">Normal: 3.0–4.5%</p></div>
+        <div class="field"><label>pH level</label><input type="number" id="t-ph" step="0.1" placeholder="e.g. 6.7" /><p class="hint">Normal: 6.6–6.8</p></div>
+      </div>
+      <div class="field"><label>SNF — solids not fat (%)</label><input type="number" id="t-snf" step="0.1" placeholder="e.g. 8.5" /><p class="hint">Normal: 8.0–9.0%</p></div>
+    </div>
+    <button class="primary" onclick="runTest()" style="width:100%; padding:10px; font-size:14px;"><i class="ti ti-microscope"></i> Check milk quality</button>
+    <div id="test-result"></div>
+  </div>
+
+  <div id="tab-history" class="tab-panel">
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:12px 16px; border-bottom:1px solid #e5e5e0; display:flex; justify-content:space-between; align-items:center;">
+        <p style="font-size:13px; font-weight:500;">All test records</p>
+        <span id="history-count" style="font-size:12px; color:#888;">0 records</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Date</th><th>Batch</th><th>Animal</th><th>Density</th><th>Fat%</th><th>pH</th><th>Score</th><th>Grade</th></tr></thead>
+          <tbody id="history-body"><tr><td colspan="8" style="text-align:center; color:#888; padding:2rem;">No tests yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-report" class="tab-panel">
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; margin-bottom:12px;">Generate summary report</p>
+      <div class="row">
+        <div class="field"><label>From date</label><input type="date" id="rep-from" /></div>
+        <div class="field"><label>To date</label><input type="date" id="rep-to" /></div>
+      </div>
+      <button class="primary" onclick="generateReport()" style="width:100%; padding:10px;"><i class="ti ti-file-analytics"></i> Generate report</button>
+    </div>
+    <div id="report-output"></div>
+  </div>
+</div>
+
+</div>
+<script>
+let currentUser = null;
+let users = JSON.parse(localStorage.getItem('dc_users') || '{}');
+let tests = JSON.parse(localStorage.getItem('dc_tests') || '{}');
+
+function save() {
+  localStorage.setItem('dc_users', JSON.stringify(users));
+  localStorage.setItem('dc_tests', JSON.stringify(tests));
+}
+
+function switchAuthTab(tab) {
+  document.getElementById('form-login').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('form-register').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('tab-login').className = tab==='login' ? 'active' : '';
+  document.getElementById('tab-register').className = tab==='register' ? 'active' : '';
+}
+
+function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  if (!name || !pass) { err.style.display='block'; err.textContent='Please fill all fields.'; return; }
+  const key = name.toLowerCase();
+  if (users[key] && users[key].pass === pass) {
+    loginSuccess(users[key]);
+  } else if (!users[key] && pass === 'milk123') {
+    users[key] = { name, farm: name, person: name, phone: '', pass };
+    save(); loginSuccess(users[key]);
+  } else { err.style.display='block'; err.textContent='Incorrect name or password.'; }
+}
+
+function doRegister() {
+  const person = document.getElementById('reg-person').value.trim();
+  const farm = document.getElementById('reg-farm').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const err = document.getElementById('reg-err');
+  if (!person || !farm || !pass) { err.style.display='block'; err.textContent='Please fill all required fields.'; return; }
+  const key = farm.toLowerCase();
+  if (users[key]) { err.style.display='block'; err.textContent='Farm name already registered. Please sign in.'; return; }
+  users[key] = { name: person, farm, person, phone, pass };
+  if (!tests[key]) tests[key] = [];
+  save(); loginSuccess(users[key]);
+}
+
+function loginSuccess(u) {
+  currentUser = u;
+  const initials = u.person.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('user-name-display').textContent = u.person;
+  document.getElementById('user-farm-display').textContent = u.farm;
+  if (!tests[u.farm.toLowerCase()]) tests[u.farm.toLowerCase()] = [];
+  document.getElementById('page-login').classList.remove('active');
+  document.getElementById('page-app').classList.add('active');
+  refreshDashboard();
+  const today = new Date().toISOString().split('T')[0];
+  const monthAgo = new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[0];
+  document.getElementById('rep-from').value = monthAgo;
+  document.getElementById('rep-to').value = today;
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('page-app').classList.remove('active');
+  document.getElementById('page-login').classList.add('active');
+  document.getElementById('login-err').style.display='none';
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (name==='history') refreshHistory();
+  if (name==='dashboard') refreshDashboard();
+}
+
+function getUserTests() {
+  if (!currentUser) return [];
+  return tests[currentUser.farm.toLowerCase()] || [];
+}
+
+function calcScore(d,t,f,p,s) {
+  let score=100; const issues=[],warnings=[];
+  if(!isNaN(d)){if(d<1.028){issues.push('Density too low — possible water adulteration');score-=35;}else if(d>1.034){warnings.push('Density slightly high — check for added solids');score-=15;}}
+  if(!isNaN(t)){if(t>10){issues.push('Temperature too high — risk of bacterial growth');score-=25;}else if(t>6){warnings.push('Temperature above ideal storage range (2–6°C)');score-=10;}}
+  if(!isNaN(f)){if(f<3.0){issues.push('Fat content below standard — may be adulterated');score-=20;}else if(f>4.5){warnings.push('Fat content slightly elevated');score-=5;}}
+  if(!isNaN(p)){if(p<6.4){issues.push('pH too low — milk may be spoiled or acidic');score-=30;}else if(p>6.9){warnings.push('pH slightly above normal range');score-=10;}}
+  if(!isNaN(s)){if(s<8.0){issues.push('SNF below standard — possible dilution');score-=20;}else if(s>9.0){warnings.push('SNF slightly elevated');score-=5;}}
+  return {score:Math.max(0,score),issues,warnings};
+}
+
+function gradeOf(score){return score>=85?'A':score>=65?'B':'C';}
+
+function runTest() {
+  const batch = document.getElementById('t-batch').value.trim() || ('Batch-'+(getUserTests().length+1));
+  const animal = document.getElementById('t-animal').value;
+  const d=parseFloat(document.getElementById('t-density').value);
+  const t=parseFloat(document.getElementById('t-temp').value);
+  const f=parseFloat(document.getElementById('t-fat').value);
+  const p=parseFloat(document.getElementById('t-ph').value);
+  const s=parseFloat(document.getElementById('t-snf').value);
+  if([d,t,f,p,s].every(isNaN)){document.getElementById('test-result').innerHTML='<div class="card" style="border-color:#ef9f27; margin-top:12px;"><p style="color:#854f0b;">Please enter at least one parameter.</p></div>';return;}
+  const {score,issues,warnings}=calcScore(d,t,f,p,s);
+  const grade=gradeOf(score);
+  const now=new Date();
+  const record={id:Date.now(),date:now.toLocaleDateString('en-IN'),time:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),batch,animal,density:isNaN(d)?'-':d.toFixed(3),temp:isNaN(t)?'-':t.toFixed(1),fat:isNaN(f)?'-':f.toFixed(1),ph:isNaN(p)?'-':p.toFixed(1),snf:isNaN(s)?'-':s.toFixed(1),score,grade,issues,warnings};
+  const key=currentUser.farm.toLowerCase();
+  if(!tests[key])tests[key]=[];
+  tests[key].unshift(record); save();
+  const cls={A:'success',B:'warning',C:'danger'};
+  const labels={A:'Grade A — Excellent. Fresh and safe for sale.',B:'Grade B — Acceptable. Use with caution.',C:'Grade C — Rejected. Not fit for sale.'};
+  const icons={A:'ti-circle-check',B:'ti-alert-triangle',C:'ti-circle-x'};
+  const barColor={A:'#639922',B:'#ba7517',C:'#e24b4a'};
+  let issueHTML='';
+  issues.forEach(i=>{issueHTML+=`<p class="issue-line" style="border-color:#e24b4a; color:#501313;">${i}</p>`;});
+  warnings.forEach(w=>{issueHTML+=`<p class="issue-line" style="border-color:#ef9f27; color:#633806;">${w}</p>`;});
+  document.getElementById('test-result').innerHTML=`
+    <div class="result-card ${cls[grade]}">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <i class="ti ${icons[grade]}" style="font-size:20px;"></i>
+        <span style="font-size:15px; font-weight:500;">${labels[grade]}</span>
+      </div>
+      <div class="score-bar"><div class="score-fill" style="width:${score}%; background:${barColor[grade]};"></div></div>
+      <p style="font-size:12px; color:#666; margin-bottom:${issueHTML?'10px':'0'};">Score: ${score}/100 &nbsp;|&nbsp; ${record.date} ${record.time} &nbsp;|&nbsp; ${batch}</p>
+      ${issueHTML||'<p style="font-size:12px; color:#3b6d11;">No issues found — all parameters within normal range.</p>'}
+    </div>`;
+  refreshDashboard();
+}
+
+function refreshDashboard() {
+  const list=getUserTests();
+  const a=list.filter(t=>t.grade==='A').length, b=list.filter(t=>t.grade==='B').length, c=list.filter(t=>t.grade==='C').length;
+  document.getElementById('stat-total').textContent=list.length;
+  document.getElementById('stat-a').textContent=a;
+  document.getElementById('stat-b').textContent=b;
+  document.getElementById('stat-c').textContent=c;
+  const recent=list.slice(0,5);
+  if(!recent.length){document.getElementById('recent-list').innerHTML='<p style="color:#888; font-size:13px;">No tests yet. Run your first test!</p>';return;}
+  const cls={A:'success',B:'warning',C:'danger'};
+  document.getElementById('recent-list').innerHTML=recent.map(r=>`
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e5e5e0;">
+      <div>
+        <p style="font-size:13px; font-weight:500; margin-bottom:2px;">${r.batch} — ${r.animal}</p>
+        <p style="font-size:11px; color:#888;">${r.date} ${r.time}</p>
+      </div>
+      <span class="badge badge-${cls[r.grade]}">Grade ${r.grade} &nbsp; ${r.score}/100</span>
+    </div>`).join('');
+}
+
+function refreshHistory() {
+  const list=getUserTests();
+  document.getElementById('history-count').textContent=list.length+' records';
+  const cls={A:'success',B:'warning',C:'danger'};
+  if(!list.length){document.getElementById('history-body').innerHTML='<tr><td colspan="8" style="text-align:center; color:#888; padding:2rem;">No tests yet</td></tr>';return;}
+  document.getElementById('history-body').innerHTML=list.map(r=>`
+    <tr>
+      <td>${r.date}<br><span style="font-size:11px; color:#888;">${r.time}</span></td>
+      <td>${r.batch}</td><td>${r.animal}</td>
+      <td>${r.density}</td><td>${r.fat}</td><td>${r.ph}</td>
+      <td>${r.score}/100</td>
+      <td><span class="badge badge-${cls[r.grade]}">Grade ${r.grade}</span></td>
+    </tr>`).join('');
+}
+
+function generateReport() {
+  const from=document.getElementById('rep-from').value;
+  const to=document.getElementById('rep-to').value;
+  const list=getUserTests().filter(r=>{
+    const parts=r.date.split('/');
+    if(parts.length<3)return true;
+    const d=new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`);
+    return d>=new Date(from)&&d<=new Date(to);
+  });
+  if(!list.length){document.getElementById('report-output').innerHTML='<div class="card"><p style="color:#888;">No tests found in this date range.</p></div>';return;}
+  const a=list.filter(t=>t.grade==='A').length,b=list.filter(t=>t.grade==='B').length,c=list.filter(t=>t.grade==='C').length;
+  const avg=Math.round(list.reduce((s,t)=>s+t.score,0)/list.length);
+  document.getElementById('report-output').innerHTML=`
+    <div class="card">
+      <p style="font-size:14px; font-weight:500; margin-bottom:4px;">${currentUser.farm} — Quality report</p>
+      <p style="font-size:12px; color:#888; margin-bottom:1rem;">${from} to ${to}</p>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:8px; margin-bottom:1rem;">
+        <div class="metric"><div class="label">Tests done</div><div class="value">${list.length}</div></div>
+        <div class="metric"><div class="label">Avg score</div><div class="value">${avg}/100</div></div>
+        <div class="metric"><div class="label">Grade A</div><div class="value" style="color:#3b6d11;">${a}</div></div>
+        <div class="metric"><div class="label">Grade B</div><div class="value" style="color:#854f0b;">${b}</div></div>
+        <div class="metric"><div class="label">Rejected</div><div class="value" style="color:#a32d2d;">${c}</div></div>
+      </div>
+      <div style="background:#f5f5f0; border-radius:8px; padding:12px; font-size:13px;">
+        <p style="font-weight:500; margin-bottom:4px;">Summary</p>
+        <p style="color:#666;">${Math.round(a/list.length*100)}% of batches passed Grade A. ${c>0?c+' batch(es) were rejected and should not be sold.':'No batches were rejected.'} Average quality score: ${avg}/100.</p>
+      </div>
+    </div>`;
+}
+</script>
 </body>
 </html>
